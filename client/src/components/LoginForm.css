@@ -1,0 +1,119 @@
+/* ----- Conteneur principal ----- */
+.tt-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  background: linear-gradient(to bottom right, #f7f9fc, #e6ecf8);
+  font-family: 'Segoe UI', sans-serif;
+  padding: 20px;
+}
+
+/* ----- Carte de login ----- */
+.tt-card {
+  background-color: white;
+  padding: 40px 45px;
+  border-radius: 20px;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.12);
+  max-width: 420px;
+  width: 100%;
+  text-align: center;
+  transition: all 0.3s ease;
+}
+
+.tt-card:hover {
+
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
+}
+
+/* ----- Logo ----- */
+.tt-logo {
+  width: 120px;
+  margin-bottom: 5px;
+}
+
+/* ----- Titre + sous-titre ----- */
+.tt-card h2 {
+  margin-bottom: 8px;
+  color: #2d2d2d;
+  font-size: 25px;
+  font-weight: 600;
+}
+
+.tt-subtext {
+  font-size: 14px;
+  color: #666;
+  margin-bottom: 30px;
+}
+
+/* ----- Champs de formulaire ----- */
+.tt-card input {
+  width: 90%;
+  padding: 13px 14px;
+  margin-bottom: 16px;
+  border: 1px solid #ccd3e0;
+  border-radius: 12px;
+  font-size: 15px;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.tt-card input:focus {
+  border-color: #715cf5;
+  box-shadow: 0 0 5px rgba(113, 92, 245, 0.3);
+  outline: none;
+}
+
+/* ----- Bouton de connexion ----- */
+.tt-login-button {
+  width:95%;
+  padding: 11px;
+  background: linear-gradient(to right, #8449b8, #3932bc);
+  color: white;
+  font-weight: 600;
+  border: none;
+  border-radius: 12px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.tt-login-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.1);
+}
+
+/* ----- Lien mot de passe oublié ----- */
+.tt-forgot {
+  text-align: right;
+  margin-bottom: 18px;
+}
+
+.tt-forgot a {
+  font-size: 13px;
+  color: #4f47ff;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.tt-forgot a:hover {
+  text-decoration: underline;
+  color: #6d62ff;
+}
+
+/* ----- Message de feedback ----- */
+.message {
+  margin-top: 18px;
+  font-weight: 600;
+  font-size: 14px;
+  color: #2f8f2f; /* succès par défaut */
+}
+
+.message.error {
+  color: #dc3545;
+}
+
+/* ----- Animation logo ----- */
+@keyframes fadeIn {
+  from { opacity: 0; transform: scale(0.9); }
+  to { opacity: 1; transform: scale(1); }
+}
