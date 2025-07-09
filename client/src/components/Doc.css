@@ -1,0 +1,153 @@
+.document-container {
+  max-width: 800px;
+  margin: 50px auto;
+  background: #ffffff;
+  border-radius: 20px;
+  padding: 40px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.07);
+  font-family: 'Segoe UI', sans-serif;
+}
+
+.document-title {
+  text-align: center;
+  font-size: 28px;
+  font-weight: 600;
+  color: #120f9b;
+  margin-bottom: 30px;
+}
+
+.no-doc {
+  text-align: center;
+  font-size: 16px;
+  color: #888;
+}
+
+.document-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.document-item {
+  background: linear-gradient(to right, #f7f9fc, #eef1ff);
+  border-left: 5px solid #120f9b;
+  border-radius: 14px;
+  padding: 20px;
+  margin-bottom: 18px;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.04);
+  transition: transform 0.2s ease;
+}
+
+
+
+.document-item-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 8px;
+}
+
+.document-item-description {
+  font-size: 15px;
+  color: #555;
+  margin-bottom: 12px;
+}
+
+.download-button {
+  background: linear-gradient(to right, #2a1078, #120f9b);
+  border: none;
+  color: white;
+  padding: 10px 18px;
+  font-size: 15px;
+  font-weight: 500;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background 0.3s ease, transform 0.2s ease;
+}
+
+.download-button:hover {
+  opacity: 0.95;
+}
+.edit-button {
+  background: #ff9800;
+  color: white;
+  border: none;
+  padding: 10px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  border-radius: 10px;
+  margin-left: 10px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.edit-button:hover {
+  background: #e65100;
+}
+
+.delete-button {
+  background: #e53935;
+  color: white;
+  border: none;
+  padding: 10px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  border-radius: 10px;
+  margin-left: 10px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.delete-button:hover {
+  background: #b71c1c;
+}
+.modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: white;
+  border-radius: 14px;
+  padding: 30px;
+  width: 400px;
+  max-width: 90%;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+}
+
+.modal-content h3 {
+  margin-bottom: 20px;
+  font-size: 20px;
+  color: #120f9b;
+}
+
+.modal-content input,
+.modal-content textarea {
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 12px;
+  font-size: 14px;
+  border-radius: 10px;
+  border: 1px solid #ccc;
+}
+
+.modal-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+.document-item button {
+  display: inline-block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+

@@ -1,0 +1,16 @@
+{
+  "files": {
+    "main.css": "/static/css/main.65e9a959.css",
+    "main.js": "/static/js/main.6243e3c3.js",
+    "static/js/453.a3c1d153.chunk.js": "/static/js/453.a3c1d153.chunk.js",
+    "static/media/logoTT.png": "/static/media/logoTT.6b9fabfe06866313c79a.png",
+    "index.html": "/index.html",
+    "main.65e9a959.css.map": "/static/css/main.65e9a959.css.map",
+    "main.6243e3c3.js.map": "/static/js/main.6243e3c3.js.map",
+    "453.a3c1d153.chunk.js.map": "/static/js/453.a3c1d153.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.65e9a959.css",
+    "static/js/main.6243e3c3.js"
+  ]
+}
