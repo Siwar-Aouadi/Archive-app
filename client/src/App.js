@@ -3,8 +3,10 @@ import { BrowserRouter as Router, Routes, Route, Navigate, Link } from "react-ro
 import LoginForm from "./components/Loginform";
 import UploadPage from "./components/UploadPage";
 import AddUserForm from "./components/AddUserForm";
-import CategoriesList from "./components/CategoriesList"; // liste des sources
-import CategoryDocuments from "./components/CategoryDocuments"; // fichiers d’une catégorie avec détails
+import CategoriesList from "./components/CategoriesList";
+import CategoryDocuments from "./components/CategoryDocuments";
+import AdminDashboard from "./components/AdminDashboard";
+import AdminCategory from "./components/AdminCategory"; // ✅ Nouveau composant importé
 import "./App.css";
 
 function App() {
@@ -15,6 +17,7 @@ function App() {
   const handleLoginSuccess = (userRole) => {
     setIsAuthenticated(true);
     setRole(userRole);
+    localStorage.setItem("role", userRole);
   };
 
   const handleLogout = () => {
@@ -41,12 +44,17 @@ function App() {
         <div className="app-container">
           <header className="header">
             <div className="header-content">
-              <h1>Tunisie telecom archive</h1>
+              <h1>Tunisie Telecom Archive</h1>
               <nav className="nav-bar">
                 <div className="nav-links">
                   <Link to="/upload">📤 Ajouter un fichier</Link>
                   <Link to="/documents">📄 Liste des fichiers</Link>
-                  {role === "admin" && <Link to="/add_user">👤 Ajouter utilisateur</Link>}
+                  {role === "admin" && (
+                    <>
+                      <Link to="/admin">👥 Gérer utilisateurs</Link>
+                      <Link to="/admin/categories">📂 Gérer catégories</Link> {/* ✅ Nouveau lien admin */}
+                    </>
+                  )}
                 </div>
                 <div className="nav-actions">
                   <button className="nav-btn" onClick={handleLogout}>Déconnexion</button>
@@ -72,6 +80,8 @@ function App() {
                 }
               />
               {role === "admin" && <Route path="/add_user" element={<AddUserForm />} />}
+              {role === "admin" && <Route path="/admin" element={<AdminDashboard />} />}
+              {role === "admin" && <Route path="/admin/categories" element={<AdminCategory />} />} {/* ✅ Route ajoutée */}
               <Route path="*" element={<Navigate to="/documents" />} />
             </Routes>
           </main>

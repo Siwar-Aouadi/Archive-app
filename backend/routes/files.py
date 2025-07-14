@@ -1,192 +1,196 @@
-from flask import Blueprint, request, jsonify, send_file, send_from_directory
+from flask import Blueprint, request, jsonify, send_file
 from pymongo import MongoClient
 import os
 import re
-from datetime import datetime
 import zipfile
-import shutil
+import io
+from datetime import datetime
 
 files_bp = Blueprint('files', __name__)
 
 client = MongoClient("mongodb://localhost:27017/")
 db = client["app_archive"]
 documents_collection = db["documents"]
+categories_collection = db["categories"]  # ✅ Nouvelle collection
 
-UPLOAD_FOLDER = os.path.join(os.getcwd(), "uploads")
-COMPRESSED_FOLDER = os.path.join(os.getcwd(), "compressed")
-TEMP_EXTRACT_FOLDER = os.path.join(os.getcwd(), "temp_extract")
-
-# Créer les dossiers si n'existent pas
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-os.makedirs(COMPRESSED_FOLDER, exist_ok=True)
-os.makedirs(TEMP_EXTRACT_FOLDER, exist_ok=True)
-
-# 📤 Upload d’un fichier avec compression
+# ✅ Upload avec nom formaté et catégorie choisie
 @files_bp.route('/upload', methods=['POST'])
 def upload_file():
     if 'file' not in request.files:
-        return jsonify({"error": "Aucun fichier reçu"}), 400
+        return jsonify({"error": "❌ Aucun fichier reçu"}), 400
 
     file = request.files['file']
-    title = request.form.get('title')
-    description = request.form.get('description')
-    username = request.form.get('username')  # 🔒 Important
+    username = request.form.get('username')
+    service = request.form.get('service')
+    titre = request.form.get('titre')
+    category = request.form.get('category')
 
-    if not file.filename or not title or not description or not username:
-        return jsonify({"error": "Champs manquants"}), 400
+    if not all([file, username, service, titre, category]):
+        return jsonify({"error": "❌ Tous les champs sont requis"}), 400
 
-    filename = file.filename
-    pattern = r'^\d{4}_\d{2}_\d{2} [\w\s-]+\.[a-zA-Z0-9]+$'
-    if not re.match(pattern, filename):
-        return jsonify({"error": "❌ Nom de fichier invalide. Format requis : AAAA_MM_JJ source.extension"}), 400
+    # ✅ Vérifie que la catégorie existe dans MongoDB
+    if not categories_collection.find_one({"name": category}):
+        return jsonify({"error": "❌ Catégorie inexistante"}), 400
 
-    filepath = os.path.join(UPLOAD_FOLDER, filename)
-    file.save(filepath)
+    extension = os.path.splitext(file.filename)[1]
+    date_str = datetime.now().strftime('%Y_%m_%d')
+    cleaned_title = re.sub(r'[^a-zA-Z0-9\s-]', '', titre).strip().replace(" ", "_")
 
-    # --- Compression ---
-    zip_name = filename.rsplit('.', 1)[0] + '.zip'  # Même nom mais extension zip
-    zip_path = os.path.join(COMPRESSED_FOLDER, zip_name)
+    final_name = f"{date_str} {service}_{category}_{cleaned_title}{extension}"
+    zip_filename = final_name.replace(extension, ".zip")
 
-    with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
-        zipf.write(filepath, arcname=filename)
+    file_content = file.read()
+    zip_buffer = io.BytesIO()
+    with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zipf:
+        zipf.writestr(final_name, file_content)
+    zip_data = zip_buffer.getvalue()
 
-    # Obtenir la taille originale et compressée
-    try:
-        original_size = os.path.getsize(filepath)
-    except:
-        original_size = 0
-    compressed_size = os.path.getsize(zip_path)
-
-    # Affichage dans le terminal
-    print(f"🗃️ Taille fichier original : {original_size / 1024:.2f} Ko")
-    print(f"📦 Taille fichier compressé : {compressed_size / 1024:.2f} Ko")
-
-    # Supprimer le fichier original après compression pour ne garder que le zip
-    try:
-        os.remove(filepath)
-    except Exception as e:
-        print("Erreur suppression fichier original après compression :", e)
-
-    # Enregistrer dans MongoDB le zip
     documents_collection.insert_one({
-        "title": title,
-        "description": description,
-        "filename": zip_name,
-        "path": zip_path,
-        "uploaded_by": username
+        "filename": zip_filename,
+        "uploaded_by": username,
+        "file_data": zip_data,
+        "category": category,
+        "title": titre,
+        "service": service
     })
 
     return jsonify({
         "message": "✅ Fichier compressé et enregistré avec succès",
-        "filename": zip_name,
-        "original_size_kb": round(original_size / 1024, 2),
-        "compressed_size_kb": round(compressed_size / 1024, 2)
+        "filename": zip_filename
     }), 200
 
-# 📄 Lister tous les fichiers (inchangé)
+# 📄 Lister les documents (admin voit tout, user voit son service)
 @files_bp.route('/documents', methods=['GET'])
 def list_documents():
-    documents = documents_collection.find({}, {"_id": 0, "title": 1, "description":1, "filename":1, "uploaded_by":1})
-    return jsonify(list(documents)), 200
+    username = request.args.get("username")
+    role = request.args.get("role")
+    service = request.args.get("service")
 
+    query = {}
+    if role != "admin" and service:
+        query = {"filename": {"$regex": f" {service}_"}}
 
-# 📁 Fichiers regroupés par source (inchangé)
-@files_bp.route('/documents/grouped', methods=['GET'])
-def list_documents_grouped():
-    documents = documents_collection.find({}, {"_id": 0, "filename": 1})
-    grouped = {}
+    docs = documents_collection.find(query, {"_id": 0, "title": 1, "description": 1, "filename": 1, "uploaded_by": 1, "category": 1})
+    return jsonify(list(docs)), 200
 
-    for doc in documents:
-        filename = doc["filename"]
-        try:
-            source_part = filename.split(" ", 1)[1]
-            source_name = os.path.splitext(source_part)[0]
-        except:
-            source_name = "Autres"
+# ✅ Lister toutes les catégories
+@files_bp.route('/categories', methods=['GET'])
+def get_categories():
+    try:
+        categories = categories_collection.find({}, {"_id": 0, "name": 1})
+        return jsonify([cat['name'] for cat in categories]), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
-        if source_name not in grouped:
-            grouped[source_name] = []
-        grouped[source_name].append(filename)
+# ✅ Ajouter une catégorie (admin uniquement)
+@files_bp.route('/categories', methods=['POST'])
+def add_category():
+    name = request.form.get('name')
+    role = request.form.get('role')
 
-    return jsonify(grouped), 200
+    if role != "admin":
+        return jsonify({"error": "Non autorisé"}), 403
 
+    if not name:
+        return jsonify({"error": "Nom requis"}), 400
 
-# 📥 Télécharger un fichier avec décompression temporaire
+    if categories_collection.find_one({"name": name}):
+        return jsonify({"error": "Catégorie déjà existante"}), 400
+
+    categories_collection.insert_one({"name": name})
+    return jsonify({"message": "✅ Catégorie ajoutée"}), 201
+
+# 📥 Télécharger un fichier compressé
 @files_bp.route('/download/<filename>', methods=['GET'])
 def download_file(filename):
-    # Chercher dans MongoDB le chemin du zip
-    file_doc = documents_collection.find_one({"filename": filename})
-    if not file_doc:
+    doc = documents_collection.find_one({"filename": filename})
+    if not doc:
         return jsonify({"error": "Fichier non trouvé"}), 404
 
-    zip_path = file_doc.get('path')
-    if not os.path.exists(zip_path):
-        return jsonify({"error": "Fichier compressé non trouvé sur le serveur"}), 404
+    zip_data = doc.get("file_data")
+    if not zip_data:
+        return jsonify({"error": "Aucune donnée trouvée"}), 404
 
-    # Nettoyer dossier temporaire extraction
-    if os.path.exists(TEMP_EXTRACT_FOLDER):
-        shutil.rmtree(TEMP_EXTRACT_FOLDER)
-    os.makedirs(TEMP_EXTRACT_FOLDER, exist_ok=True)
+    with zipfile.ZipFile(io.BytesIO(zip_data), 'r') as zipf:
+        extracted_names = zipf.namelist()
+        if not extracted_names:
+            return jsonify({"error": "Fichier vide"}), 500
+        extracted_file = zipf.read(extracted_names[0])
+        return send_file(
+            io.BytesIO(extracted_file),
+            as_attachment=True,
+            download_name=extracted_names[0]
+        )
 
-    # Extraction du zip dans dossier temporaire
-    with zipfile.ZipFile(zip_path, 'r') as zip_ref:
-        zip_ref.extractall(TEMP_EXTRACT_FOLDER)
-
-    # Normalement un seul fichier à extraire
-    extracted_files = os.listdir(TEMP_EXTRACT_FOLDER)
-    if not extracted_files:
-        return jsonify({"error": "Erreur lors de la décompression"}), 500
-
-    extracted_file_path = os.path.join(TEMP_EXTRACT_FOLDER, extracted_files[0])
-
-    # Envoyer le fichier décompressé
-    return send_file(extracted_file_path, as_attachment=True)
-
-
-# ❌ Supprimer un fichier (modifié pour supprimer zip)
+# ❌ Supprimer un fichier
 @files_bp.route('/delete/<filename>', methods=['DELETE'])
 def delete_file(filename):
     username = request.args.get('username')
     role = request.args.get('role')
 
-    file_doc = documents_collection.find_one({"filename": filename})
-    if not file_doc:
+    doc = documents_collection.find_one({"filename": filename})
+    if not doc:
         return jsonify({"error": "Fichier non trouvé"}), 404
 
-    if role != "admin" and file_doc.get("uploaded_by") != username:
+    if role != "admin" and doc.get("uploaded_by") != username:
         return jsonify({"error": "Non autorisé à supprimer ce fichier"}), 403
-
-    try:
-        os.remove(file_doc["path"])
-    except Exception as e:
-        print("Erreur suppression fichier :", e)
 
     documents_collection.delete_one({"filename": filename})
     return jsonify({"message": "✅ Fichier supprimé"}), 200
 
-
-# ✏️ Modifier un fichier (inchangé)
+# ✏️ Remplacer un fichier par un nouveau
 @files_bp.route('/update/<filename>', methods=['PUT'])
 def update_file(filename):
-    username = request.args.get('username')
-    role = request.args.get('role')
+    username = request.form.get('username')
+    role = request.form.get('role')
+    file = request.files.get('file')
 
-    file_doc = documents_collection.find_one({"filename": filename})
-    if not file_doc:
+    doc = documents_collection.find_one({"filename": filename})
+    if not doc:
         return jsonify({"error": "Fichier non trouvé"}), 404
 
-    if role != "admin" and file_doc.get("uploaded_by") != username:
+    if role != "admin" and doc.get("uploaded_by") != username:
         return jsonify({"error": "Non autorisé à modifier ce fichier"}), 403
 
-    data = request.get_json()
-    new_title = data.get("title")
-    new_description = data.get("description")
+    if not file:
+        return jsonify({"error": "Aucun fichier reçu"}), 400
 
-    update_fields = {}
-    if new_title:
-        update_fields["title"] = new_title
-    if new_description:
-        update_fields["description"] = new_description
+    new_filename = file.filename
+    pattern = r'^\d{4}_\d{2}_\d{2} [\w\s-]+_[\w\s-]+_[\w\s-]+\.[a-zA-Z0-9]+$'
+    if not re.match(pattern, new_filename):
+        return jsonify({"error": "❌ Nom de fichier invalide"}), 400
 
-    documents_collection.update_one({"filename": filename}, {"$set": update_fields})
-    return jsonify({"message": "✅ Fichier mis à jour"}), 200
+    file_content = file.read()
+    zip_buffer = io.BytesIO()
+    with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zipf:
+        zipf.writestr(new_filename, file_content)
+    zip_data = zip_buffer.getvalue()
+    zip_name = new_filename.rsplit('.', 1)[0] + '.zip'
+
+    documents_collection.update_one(
+        {"filename": filename},
+        {"$set": {
+            "filename": zip_name,
+            "file_data": zip_data
+        }}
+    )
+
+    return jsonify({"message": "✅ Fichier remplacé avec succès"}), 200
+
+# ❌ Supprimer tous les fichiers d'une catégorie
+@files_bp.route("/delete_category/<category_name>", methods=["DELETE"])
+def delete_category(category_name):
+    username = request.args.get("username")
+    role = request.args.get("role")
+
+    if role != "admin":
+        return jsonify({"error": "Non autorisé"}), 403
+
+    deleted_files = []
+    for doc in documents_collection.find({"category": category_name}):
+        documents_collection.delete_one({"_id": doc["_id"]})
+        deleted_files.append(doc["filename"])
+
+    return jsonify({
+        "message": f"✅ {len(deleted_files)} fichier(s) supprimé(s) de la catégorie '{category_name}'"
+    }), 200

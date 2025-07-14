@@ -15,17 +15,26 @@ function LoginForm({ onLoginSuccess }) {
         username,
         password,
       });
-  
-      const { message, role, username: returnedUsername } = response.data;
+
+      const {
+        message: successMessage,
+        role,
+        username: returnedUsername,
+        service, // 👈 récupérer le service
+      } = response.data;
+
       setMessage("✅ Connexion réussie !");
       localStorage.setItem("role", role);
-      localStorage.setItem("username", returnedUsername); // 👈 sauvegarde du username
+      localStorage.setItem("username", returnedUsername);
+      localStorage.setItem("service", service); // 👈 enregistrer le service
+
       onLoginSuccess(role);
     } catch (err) {
       console.error("Erreur de connexion :", err);
       setMessage("❌ Identifiants invalides !");
     }
   };
+
   return (
     <div className="tt-container">
       <div className="tt-card">

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import axios from "axios";
 import "./Categories.css";
 
 function CategoriesList({ onSelectCategory }) {
@@ -9,15 +10,15 @@ function CategoriesList({ onSelectCategory }) {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const res = await fetch(`${process.env.REACT_APP_API_URL}/documents/grouped`);
-        const data = await res.json();
-        setCategories(Object.keys(data));
+        const res = await axios.get(`${process.env.REACT_APP_API_URL}/categories`);
+        setCategories(res.data); // ✅ Liste directe de catégories venant de MongoDB
       } catch (error) {
         console.error("Erreur fetch categories:", error);
       } finally {
         setLoading(false);
       }
     };
+
     fetchCategories();
   }, []);
 
@@ -34,7 +35,6 @@ function CategoriesList({ onSelectCategory }) {
     <div className="categories-container">
       <h2 className="categories-title">Catégories de documents</h2>
 
-      {/* 🔍 Barre de recherche */}
       <input
         type="text"
         placeholder="🔍 Rechercher une catégorie..."

@@ -6,29 +6,22 @@ function CategoryDocuments({ category, onBack }) {
   const [documents, setDocuments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [editingFile, setEditingFile] = useState(null);
-  const [newTitle, setNewTitle] = useState("");
-  const [newDescription, setNewDescription] = useState("");
+  const [newFile, setNewFile] = useState(null);
   const [fileSearch, setFileSearch] = useState("");
 
   const username = localStorage.getItem("username");
   const role = localStorage.getItem("role");
+  const service = localStorage.getItem("service");
 
   useEffect(() => {
     const fetchDocuments = async () => {
       try {
-        const res = await axios.get(`${process.env.REACT_APP_API_URL}/documents`);
-        const filtered = res.data.filter((doc) => {
-          let sourceName = "Autres";
-          try {
-            const parts = doc.filename.split(" ", 2);
-            if (parts.length > 1) {
-              sourceName = parts[1].split(".")[0];
-            }
-          } catch {
-            sourceName = "Autres";
-          }
-          return sourceName === category;
+        const res = await axios.get(`${process.env.REACT_APP_API_URL}/documents`, {
+          params: { username, role, service }
         });
+        const filtered = res.data.filter(doc => 
+          doc.category?.toLowerCase() === category.toLowerCase()
+        );
         setDocuments(filtered);
       } catch (error) {
         console.error("Erreur fetch fichiers:", error);
@@ -50,7 +43,7 @@ function CategoryDocuments({ category, onBack }) {
         params: { username, role },
       });
       alert(res.data.message);
-      setDocuments((docs) => docs.filter((d) => d.filename !== filename));
+      setDocuments(docs => docs.filter(d => d.filename !== filename));
     } catch (err) {
       alert("❌ Suppression échouée : " + (err.response?.data?.error || "Erreur inconnue"));
     }
@@ -58,34 +51,42 @@ function CategoryDocuments({ category, onBack }) {
 
   const openEditModal = (doc) => {
     setEditingFile(doc);
-    setNewTitle(doc.title || doc.filename);
-    setNewDescription(doc.description);
+    setNewFile(null);
   };
 
   const handleUpdate = async () => {
+    if (!newFile) {
+      alert("📁 Veuillez sélectionner un nouveau fichier.");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("file", newFile);
+    formData.append("username", username);
+    formData.append("role", role);
+
     try {
-      const res = await axios.put(`${process.env.REACT_APP_API_URL}/update/${editingFile.filename}`, {
-        title: newTitle, description: newDescription },
-        { params: { username, role } }
+      const res = await axios.put(
+        `${process.env.REACT_APP_API_URL}/update/${editingFile.filename}`,
+        formData,
+        {
+          headers: { "Content-Type": "multipart/form-data" },
+        }
       );
+
       alert(res.data.message);
       setEditingFile(null);
-      const refreshed = await axios.get(`${process.env.REACT_APP_API_URL}/documents`);
-      const filtered = refreshed.data.filter((doc) => {
-        let sourceName = "Autres";
-        try {
-          const parts = doc.filename.split(" ", 2);
-          if (parts.length > 1) {
-            sourceName = parts[1].split(".")[0];
-          }
-        } catch {
-          sourceName = "Autres";
-        }
-        return sourceName === category;
+      setNewFile(null);
+
+      const refreshed = await axios.get(`${process.env.REACT_APP_API_URL}/documents`, {
+        params: { username, role, service }
       });
+      const filtered = refreshed.data.filter(doc =>
+        doc.category?.toLowerCase() === category.toLowerCase()
+      );
       setDocuments(filtered);
     } catch (err) {
-      alert("❌ Erreur de mise à jour");
+      alert("❌ Erreur de mise à jour : " + (err.response?.data?.error || "Erreur inconnue"));
     }
   };
 
@@ -102,7 +103,6 @@ function CategoryDocuments({ category, onBack }) {
       <button className="back-button" onClick={onBack}>← Retour</button>
       <h2 className="categories-title">Fichiers dans : {category}</h2>
 
-      {/* 🔍 Barre de recherche */}
       <input
         type="text"
         placeholder="🔍 Rechercher un fichier..."
@@ -116,18 +116,14 @@ function CategoryDocuments({ category, onBack }) {
       ) : (
         <ul className="list">
           {documents
-            .filter((doc) =>
-              doc.filename.toLowerCase().includes(fileSearch) ||
-              (doc.title && doc.title.toLowerCase().includes(fileSearch))
-            )
-            .map((doc) => (
+            .filter(doc => doc.filename.toLowerCase().includes(fileSearch))
+            .map(doc => (
               <li key={doc.filename} className="list-item" title={doc.filename}>
                 <div className="list-item-title">📄 {doc.filename}</div>
-                <div><strong>Description :</strong> {doc.description}</div>
                 <div>👤 Uploader : <strong>{doc.uploaded_by || "Inconnu"}</strong></div>
 
                 <div className="button-row">
-                  <button className="download-button" onClick={() => handleDownload(doc.filename)}>📥Télécharger</button>
+                  <button className="download-button" onClick={() => handleDownload(doc.filename)}>📥 Télécharger</button>
 
                   {(role === "admin" || doc.uploaded_by?.toLowerCase() === username?.toLowerCase()) && (
                     <>
@@ -144,15 +140,14 @@ function CategoryDocuments({ category, onBack }) {
       {editingFile && (
         <div className="modal-backdrop">
           <div className="modal-content">
-            <h3>✏️ Modifier le fichier</h3>
-            <textarea
-              value={newDescription}
-              onChange={(e) => setNewDescription(e.target.value)}
-              placeholder="Nouvelle description"
+            <h3>✏️ Remplacer le fichier</h3>
+            <input
+              type="file"
+              onChange={e => setNewFile(e.target.files[0])}
             />
             <div className="modal-buttons">
-              <button onClick={handleUpdate} className="edit-button">✅Enregistrer</button>
-              <button onClick={() => setEditingFile(null)} className="delete-button">❌Annuler</button>
+              <button onClick={handleUpdate} className="edit-button">✅ Enregistrer</button>
+              <button onClick={() => setEditingFile(null)} className="delete-button">❌ Annuler</button>
             </div>
           </div>
         </div>

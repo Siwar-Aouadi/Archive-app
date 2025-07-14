@@ -5,6 +5,7 @@ import "./Doc.css";
 function DocumentList() {
   const [documents, setDocuments] = useState([]);
   const [editingFile, setEditingFile] = useState(null);
+  const [newFile, setNewFile] = useState(null);
   const [newTitle, setNewTitle] = useState("");
   const [newDescription, setNewDescription] = useState("");
 
@@ -15,7 +16,6 @@ function DocumentList() {
     const fetchDocuments = async () => {
       try {
         const res = await axios.get(`${process.env.REACT_APP_API_URL}/documents`);
-        console.log("📦 Données récupérées :", res.data); // POUR DEBUG
         setDocuments(res.data);
       } catch (err) {
         console.error("Erreur de chargement :", err);
@@ -45,26 +45,33 @@ function DocumentList() {
     setEditingFile(doc);
     setNewTitle(doc.title);
     setNewDescription(doc.description);
+    setNewFile(null);
   };
 
   const handleUpdate = async () => {
+    if (!newFile) {
+      alert("📁 Veuillez sélectionner un nouveau fichier.");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("file", newFile);
+    formData.append("username", username);
+    formData.append("role", role);
+
     try {
-      const res = await axios.put(`${process.env.REACT_APP_API_URL}/update/${editingFile.filename}`, 
-       {
-          title: newTitle,
-          description: newDescription,
+      const res = await axios.put(`${process.env.REACT_APP_API_URL}/update/${editingFile.filename}`, formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
         },
-        {
-          params: { username, role },
-        }
-      );
+      });
 
       alert(res.data.message);
       setEditingFile(null);
-      const refreshed  = await axios.get(`${process.env.REACT_APP_API_URL}/documents`);
+      const refreshed = await axios.get(`${process.env.REACT_APP_API_URL}/documents`);
       setDocuments(refreshed.data);
     } catch (err) {
-      alert("❌ Erreur de mise à jour");
+      alert("❌ Erreur de mise à jour : " + (err.response?.data?.error || "Erreur inconnue"));
     }
   };
 
@@ -115,17 +122,10 @@ function DocumentList() {
       {editingFile && (
         <div className="modal-backdrop">
           <div className="modal-content">
-            <h3>✏️ Modifier le fichier</h3>
+            <h3>✏️ Remplacer le fichier</h3>
             <input
-              type="text"
-              value={newTitle}
-              onChange={(e) => setNewTitle(e.target.value)}
-              placeholder="Nouveau titre"
-            />
-            <textarea
-              value={newDescription}
-              onChange={(e) => setNewDescription(e.target.value)}
-              placeholder="Nouvelle description"
+              type="file"
+              onChange={(e) => setNewFile(e.target.files[0])}
             />
             <div className="modal-buttons">
               <button onClick={handleUpdate} className="edit-button">

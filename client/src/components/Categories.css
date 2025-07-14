@@ -269,4 +269,20 @@
     margin-top: 60px;
     font-style: italic;
   }
+  .add-button {
+    background-color: #83be91;
+    color: white;
+    font-weight: bold;
+    border: none;
+    padding: 10px 8px;
+    border-radius: 10px;
+    font-size: 14px;
+    margin-top: 10px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+  }
+  
+  .add-button:hover {
+    background-color: #218838;
+  }
   

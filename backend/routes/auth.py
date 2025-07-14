@@ -31,8 +31,10 @@ def login():
     if not user or not check_password_hash(user['password'], password):
         return jsonify({"message": "Identifiants invalides"}), 401
 
+    # ✅ Renvoie maintenant aussi le champ 'service'
     return jsonify({
         "message": "Connexion réussie",
-        "role": user.get("role", "user"),  # 🛡️ renvoie aussi le rôle
-        "username": username
+        "role": user.get("role", "user"),
+        "username": username,
+        "service": user.get("service", "")  # 👈 Champ ajouté ici
     }), 200
