@@ -1,0 +1,161 @@
+concentre toi avec moi : j'ai fait le login par le mot register dans ces fichiers , je veux que tu modifies le register et par login : 
+c le fichier auth.py : from flask import Blueprint, request, jsonify
+from pymongo import MongoClient
+from werkzeug.security import generate_password_hash
+
+auth_bp = Blueprint('auth', __name__)
+
+# Connexion à la base de données MongoDB
+client = MongoClient('mongodb://localhost:27017')
+db = client['app_archive']
+users_collection = db['users']
+
+# Route de login
+@auth_bp.route('/register', methods=['POST'])
+def register():
+    data = request.get_json()  # Récupère les données JSON envoyées par React
+    username = data.get('username')
+    password = data.get('password')
+    
+
+    # Vérifie si l'utilisateur existe déjà
+    if users_collection.find_one({"username": username}):
+        return jsonify({"message": "Utilisateur déjà existant"}), 409
+
+    # Hache le mot de passe pour ne jamais stocker de texte en clair
+    hashed_password = generate_password_hash(password)
+
+    # Insère l'utilisateur avec son mot de passe haché dans la base MongoDB
+    users_collection.insert_one({
+        "username": username,
+        "password": hashed_password
+    })
+
+    # Réponse JSON côté client
+    return jsonify({"message": "Inscription réussie"}), 201 
+
+
+
+c'est le fichier du form login : import React, { useState } from "react"; // Importation de React et du hook useState
+import axios from "axios";               // Pour envoyer des requêtes HTTP (vers le backend Flask)
+import { useNavigate } from "react-router-dom"; // Pour rediriger l'utilisateur vers une autre page
+import "./RegisterForm.css";
+
+
+function RegisterForm() {
+  // Déclaration des variables d'état pour stocker les valeurs du formulaire
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [message, setMessage] = useState(""); // Message d'information ou d'erreur
+
+  const navigate = useNavigate(); // Initialisation de la fonction de redirection
+
+  // Fonction appelée lors de la soumission du formulaire
+  const handleSubmit = async (e) => {
+    e.preventDefault(); // Empêche le rechargement automatique de la page
+
+    try {
+      // Envoie d'une requête POST à l'API Flask avec les données d'inscription
+      await axios.post("http://localhost:5000/register", {
+        username,
+        password,
+      });
+
+      // Affiche un message temporaire avant de rediriger
+      setMessage("✅ Accés réussi");
+
+      // Redirige vers la page /upload après 2 secondes
+      setTimeout(() => {
+        navigate("/upload");
+      }, 2000);
+    } catch (err) {
+      // En cas d'erreur lors de la requête, afficher un message
+      console.error("Erreur d'inscription :", err);
+      setMessage("❌ Une erreur s'est produite !");
+    }
+  };
+
+  // Ce que le composant affiche à l'écran
+  return (
+    <div className="form-container">
+      <form onSubmit={handleSubmit}>
+        <h2>Se connecter</h2>
+
+        {/* Champ pour le nom d'utilisateur */}
+        <input
+          type="text"
+          placeholder="Nom d'utilisateur"
+          value={username}
+          onChange={(e) => setUsername(e.target.value)}
+          required
+        />
+
+        {/* Champ pour le mot de passe */}
+        <input
+          type="password"
+          placeholder="Mot de passe"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          required
+        />
+
+        {/* Bouton pour envoyer le formulaire */}
+        <button type="submit" style={{ marginTop: "15px" }}>
+          Se connecter
+        </button>
+      </form>
+
+      {/* Affiche le message de retour s'il existe */}
+      {message && <p style={{ marginTop: "20px" }}>{message}</p>}
+    </div>
+  );
+}
+
+export default RegisterForm; // Permet d'importer ce composant dans App.js
+c l'app py : from flask import Flask, request, jsonify
+from flask_cors import CORS
+from models.user_model import connect_user
+from routes.files import files_bp
+from routes.auth import auth_bp
+
+app = Flask(__name__)           # ✅ D'abord créer l'objet Flask
+CORS(app)                       # ✅ Activer CORS après
+
+app.register_blueprint(files_bp)  # ✅ Ensuite enregistrer le blueprint
+
+app.register_blueprint(auth_bp)
+
+
+@app.route('/register', methods=['POST'])
+def register():
+    data = request.get_json()
+    username = data.get("username")
+    password = data.get("password")
+
+    if not username or not password:
+        return jsonify({"error": "Champs vides"}), 400
+
+    connect_user(username, password)
+    print("Utilisateur enregistré :", username)
+    return jsonify({"message": "Inscription réussie"}), 201
+
+if __name__ == '__main__':
+    app.run(debug=True)
+c lapp js : import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import Registerform from "./components/Registerform";
+import UploadPage from "./components/UploadPage";
+
+function App() {
+  return (
+    <Router>
+      <Routes>
+        <Route path="/" element={<Registerform />} />
+        <Route path="/upload" element={<UploadPage />} />
+      </Routes>
+    </Router>
+  );
+}
+
+export default App;
+ 
+
