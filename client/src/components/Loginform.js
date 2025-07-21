@@ -20,15 +20,18 @@ function LoginForm({ onLoginSuccess }) {
         message: successMessage,
         role,
         username: returnedUsername,
-        service, // 👈 récupérer le service
+        service,
+        token  // <-- On récupère le token ici
       } = response.data;
 
       setMessage("✅ Connexion réussie !");
       localStorage.setItem("role", role);
       localStorage.setItem("username", returnedUsername);
-      localStorage.setItem("service", service); // 👈 enregistrer le service
+      localStorage.setItem("service", service);
+      localStorage.setItem("token", token);  // <-- On stocke le token dans localStorage
 
-      onLoginSuccess(role);
+      onLoginSuccess(role); // Si tu veux aussi transmettre le token, modifie la signature ici
+
     } catch (err) {
       console.error("Erreur de connexion :", err);
       setMessage("❌ Identifiants invalides !");

@@ -285,4 +285,147 @@
   .add-button:hover {
     background-color: #218838;
   }
+  .filter-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+  
+  .filter-bar input {
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    width: 150px;
+  }
+  
+  .filter-bar button {
+    padding: 8px 16px;
+    background-color: #28a745;
+    border: none;
+    color: white;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+  .categories-container {
+    max-width: 960px;
+    margin: 40px auto;
+    padding: 30px;
+    background-color: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 16px;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  }
+  
+  .categories-title {
+    font-size: 24px;
+    font-weight: 600;
+    margin-bottom: 25px;
+    text-align: center;
+    color: #2c3e50;
+  }
+  
+  .filter-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-bottom: 25px;
+    justify-content: space-between;
+  }
+  
+  .filter-bar select,
+  .filter-bar input[type="text"] {
+    flex: 1 1 140px;
+    padding: 12px;
+    font-size: 15px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    transition: border-color 0.2s ease;
+  }
+  
+  .filter-bar select:focus,
+  .filter-bar input:focus {
+    border-color: #3498db;
+    outline: none;
+  }
+  
+  .filter-bar button {
+    background-color: #3498db;
+    color: white;
+    border: none;
+    padding: 12px 18px;
+    font-size: 15px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+  }
+  
+  .filter-bar button:hover {
+    background-color: #217dbb;
+  }
+  
+  .list {
+    list-style-type: none;
+    padding: 0;
+  }
+  
+  .list-item {
+    padding: 16px;
+    background-color: #f9f9f9;
+    margin-bottom: 12px;
+    border-radius: 10px;
+    border: 1px solid #e0e0e0;
+    transition: background-color 0.2s ease;
+  }
+  
+  .list-item:hover {
+    background-color: #f1faff;
+  }
+  
+  .list-item-title {
+    font-weight: 600;
+    margin-bottom: 6px;
+    color: #2c3e50;
+  }
+  
+  .search-input {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    font-size: 15px;
+    margin-bottom: 20px;
+  }
+  
+  .no-files-msg {
+    text-align: center;
+    font-style: italic;
+    color: #888;
+  }
+  
+  .back-button {
+    background: none;
+    border: none;
+    color: #3498db;
+    font-size: 15px;
+    margin-bottom: 15px;
+    cursor: pointer;
+  }
+  
+  .back-button:hover {
+    text-decoration: underline;
+  }
+  
+  /* Responsive */
+  @media (max-width: 768px) {
+    .filter-bar {
+      flex-direction: column;
+    }
+  
+    .filter-bar select,
+    .filter-bar input,
+    .filter-bar button {
+      width: 100%;
+    }
+  }
   

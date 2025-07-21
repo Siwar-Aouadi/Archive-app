@@ -89,6 +89,7 @@ function AdminDashboard() {
         <select name="role" value={form.role} onChange={handleChange}>
           <option value="user">Utilisateur</option>
           <option value="admin">Administrateur</option>
+          <option value="responsable_service">Responsable de service</option>
         </select>
         <button type="submit">{isEditing ? "💾 Modifier" : "➕ Ajouter"}</button>
       </form>

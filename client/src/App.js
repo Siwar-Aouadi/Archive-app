@@ -6,7 +6,11 @@ import AddUserForm from "./components/AddUserForm";
 import CategoriesList from "./components/CategoriesList";
 import CategoryDocuments from "./components/CategoryDocuments";
 import AdminDashboard from "./components/AdminDashboard";
-import AdminCategory from "./components/AdminCategory"; // ✅ Nouveau composant importé
+import AdminCategory from "./components/AdminCategory";
+import MyAccessRequests from './components/MyAccessRequests';
+import AccessManagement from './components/AccessManagement';
+import RequestAccessForm from './components/RequestAccessForm';
+import ReceivedAccessRequests from './components/ReceivedAccessRequests';
 import "./App.css";
 
 function App() {
@@ -24,6 +28,9 @@ function App() {
     setIsAuthenticated(false);
     setRole("");
     localStorage.removeItem("role");
+    localStorage.removeItem("token");
+    localStorage.removeItem("username");
+    localStorage.removeItem("service");
   };
 
   const handleSelectCategory = (category) => {
@@ -52,9 +59,13 @@ function App() {
                   {role === "admin" && (
                     <>
                       <Link to="/admin">👥 Gérer utilisateurs</Link>
-                      <Link to="/admin/categories">📂 Gérer catégories</Link> {/* ✅ Nouveau lien admin */}
+                      <Link to="/admin/categories">📂 Gérer catégories</Link>
                     </>
                   )}
+                  <Link to="/my-access-request">🔐 Mes demandes d'accès</Link>
+                  <Link to="/access">🔐 Gestion autorisations</Link>
+                  {/* Nouveau lien pour accéder au formulaire de demande d'accès */}
+                  <Link to="/request-access">📝 Demander un accès</Link>
                 </div>
                 <div className="nav-actions">
                   <button className="nav-btn" onClick={handleLogout}>Déconnexion</button>
@@ -81,7 +92,17 @@ function App() {
               />
               {role === "admin" && <Route path="/add_user" element={<AddUserForm />} />}
               {role === "admin" && <Route path="/admin" element={<AdminDashboard />} />}
-              {role === "admin" && <Route path="/admin/categories" element={<AdminCategory />} />} {/* ✅ Route ajoutée */}
+              {role === "admin" && <Route path="/admin/categories" element={<AdminCategory />} />}
+              <Route path="/my-access-request" element={<MyAccessRequests token={localStorage.getItem("token")} />} />
+              <Route path="/access" element={<AccessManagement />} />
+              <Route path="/received-requests" element={<ReceivedAccessRequests token={localStorage.getItem("token")} />} />
+
+              {/* Formulaire de demande d'accès, sans props fixes */}
+              <Route
+                path="/request-access"
+                element={<RequestAccessForm token={localStorage.getItem("token")} />}
+              />
+
               <Route path="*" element={<Navigate to="/documents" />} />
             </Routes>
           </main>

@@ -6,6 +6,8 @@ from models.user_model import connect_user
 from routes.files import files_bp
 from routes.admin_routes import admin_bp  
 from routes.auth import auth_bp 
+from routes.access_requests import access_requests_bp
+from routes.services import services_bp 
 
 app = Flask(
     __name__,
@@ -13,6 +15,9 @@ app = Flask(
     static_url_path=''            # pour que l'URL soit propre sans /static/
 )
 CORS(app)
+from flask_jwt_extended import JWTManager
+app.config['JWT_SECRET_KEY'] = 'super-secret-key'
+jwt = JWTManager(app)
 
 UPLOAD_FOLDER = 'uploads'
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
@@ -22,6 +27,8 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.register_blueprint(files_bp)
 app.register_blueprint(admin_bp)
 app.register_blueprint(auth_bp)
+app.register_blueprint(access_requests_bp)
+app.register_blueprint(services_bp)
 
 # Serve React build (index.html et les fichiers statiques)
 @app.route('/', defaults={'path': ''})

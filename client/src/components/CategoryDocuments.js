@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
+import RequestAccessForm from "./RequestAccessForm"; // ✅ à ajouter
 import "./Categories.css";
 
 function CategoryDocuments({ category, onBack }) {
@@ -12,16 +13,21 @@ function CategoryDocuments({ category, onBack }) {
   const username = localStorage.getItem("username");
   const role = localStorage.getItem("role");
   const service = localStorage.getItem("service");
+  const token = localStorage.getItem("token");
 
   useEffect(() => {
     const fetchDocuments = async () => {
       try {
+        const params = role === "admin" ? { role } : { username, role, service };
+
         const res = await axios.get(`${process.env.REACT_APP_API_URL}/documents`, {
-          params: { username, role, service }
+          params
         });
-        const filtered = res.data.filter(doc => 
+
+        const filtered = res.data.filter(doc =>
           doc.category?.toLowerCase() === category.toLowerCase()
         );
+
         setDocuments(filtered);
       } catch (error) {
         console.error("Erreur fetch fichiers:", error);
@@ -30,12 +36,14 @@ function CategoryDocuments({ category, onBack }) {
         setLoading(false);
       }
     };
+
     fetchDocuments();
   }, [category]);
 
-  const handleDownload = (filename) => {
-    window.open(`${process.env.REACT_APP_API_URL}/download/${filename}`, "_blank");
+  const handleDownload = (fileId) => {
+    window.open(`${process.env.REACT_APP_API_URL}/download_by_id/${fileId}`, "_blank");
   };
+  
 
   const handleDelete = async (filename) => {
     try {
@@ -79,8 +87,9 @@ function CategoryDocuments({ category, onBack }) {
       setNewFile(null);
 
       const refreshed = await axios.get(`${process.env.REACT_APP_API_URL}/documents`, {
-        params: { username, role, service }
+        params: role === "admin" ? { role } : { username, role, service }
       });
+
       const filtered = refreshed.data.filter(doc =>
         doc.category?.toLowerCase() === category.toLowerCase()
       );
@@ -118,18 +127,25 @@ function CategoryDocuments({ category, onBack }) {
           {documents
             .filter(doc => doc.filename.toLowerCase().includes(fileSearch))
             .map(doc => (
-              <li key={doc.filename} className="list-item" title={doc.filename}>
+              <li key={doc._id || doc.filename} className="list-item" title={doc.filename}>
                 <div className="list-item-title">📄 {doc.filename}</div>
                 <div>👤 Uploader : <strong>{doc.uploaded_by || "Inconnu"}</strong></div>
+                <div>🏢 Service : <strong>{doc.service || "Non précisé"}</strong></div>
 
                 <div className="button-row">
-                  <button className="download-button" onClick={() => handleDownload(doc.filename)}>📥 Télécharger</button>
-
-                  {(role === "admin" || doc.uploaded_by?.toLowerCase() === username?.toLowerCase()) && (
+                  {(role === "admin" || doc.uploaded_by?.toLowerCase() === username?.toLowerCase()) ? (
                     <>
+                      <button className="download-button" onClick={() => handleDownload(doc.id)}>📥 Télécharger</button>
                       <button className="icon-button" onClick={() => openEditModal(doc)}>✏️</button>
                       <button className="icon-button delete" onClick={() => handleDelete(doc.filename)}>🗑️</button>
                     </>
+                  ) : (
+                    <RequestAccessForm
+                      fileId={doc._id}
+                      ownerId={doc.uploaded_by}
+                      token={token}
+                      title={doc.filename}
+                    />
                   )}
                 </div>
               </li>

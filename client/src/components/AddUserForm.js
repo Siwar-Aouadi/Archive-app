@@ -6,6 +6,7 @@ function AddUserForm() {
   const [newUsername, setNewUsername] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [newRole, setNewRole] = useState("user");
+  const [newService, setNewService] = useState(""); // 👈 service sélectionné
   const [message, setMessage] = useState("");
 
   const handleAddUser = async (e) => {
@@ -21,12 +22,14 @@ function AddUserForm() {
         username: newUsername,
         password: newPassword,
         role: newRole,
+        service: newService, // 👈 envoyer le service si applicable
       });
 
       setMessage(res.data.message || "✅ Utilisateur ajouté !");
       setNewUsername("");
       setNewPassword("");
       setNewRole("user");
+      setNewService("");
     } catch (err) {
       console.error(err);
       setMessage(
@@ -56,9 +59,25 @@ function AddUserForm() {
           onChange={(e) => setNewRole(e.target.value)}
         >
           <option value="user">Utilisateur</option>
+          <option value="responsable_service">Responsable de service</option>
           <option value="admin">Administrateur</option>
         </select>
-        <button type="submit">Ajouter l'utilisateurr </button>
+
+        {/* Service selection only if not admin */}
+        {newRole !== "admin" && (
+          <select
+            value={newService}
+            onChange={(e) => setNewService(e.target.value)}
+            required
+          >
+            <option value="">-- Choisir un service --</option>
+            <option value="Service 1">Service 1</option>
+            <option value="Service 2">Service 2</option>
+            <option value="Service 3">Service 3</option>
+          </select>
+        )}
+
+        <button type="submit">Ajouter l'utilisateur</button>
       </form>
       {message && <p className="add-user-message">{message}</p>}
     </div>

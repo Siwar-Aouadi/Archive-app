@@ -5,6 +5,7 @@ import re
 import zipfile
 import io
 from datetime import datetime
+from bson import ObjectId
 
 files_bp = Blueprint('files', __name__)
 
@@ -62,16 +63,53 @@ def upload_file():
 # 📄 Lister les documents (admin voit tout, user voit son service)
 @files_bp.route('/documents', methods=['GET'])
 def list_documents():
-    username = request.args.get("username")
     role = request.args.get("role")
     service = request.args.get("service")
+    username = request.args.get("username")  # ✅ Important pour filtrer l'utilisateur
+    year = request.args.get("year")
+    month = request.args.get("month")
+    day = request.args.get("day")
+    category = request.args.get("category")
 
     query = {}
-    if role != "admin" and service:
-        query = {"filename": {"$regex": f" {service}_"}}
 
-    docs = documents_collection.find(query, {"_id": 0, "title": 1, "description": 1, "filename": 1, "uploaded_by": 1, "category": 1})
+    # 🔐 Filtrage basé sur le rôle
+    if role == "admin":
+        if service:
+            query["service"] = service
+    elif role == "responsable_service":
+        if not service:
+            return jsonify({"error": "Service requis pour les responsables"}), 400
+        query["service"] = service  # voit tous les fichiers de SON service
+    else:  # utilisateur normal
+        if not username:
+            return jsonify({"error": "Nom d'utilisateur requis"}), 400
+        query["uploaded_by"] = username  # voit uniquement ses propres fichiers
+
+    if category:
+        query["category"] = category
+
+    # 📅 Recherche par date dans le nom du fichier
+    if year:
+        date_pattern = f"^{year}"
+        if month:
+            date_pattern += f"_{month.zfill(2)}"
+            if day:
+                date_pattern += f"_{day.zfill(2)}"
+        query["filename"] = {"$regex": date_pattern}
+
+    docs = documents_collection.find(query, {
+        "_id": 0,
+        "title": 1,
+        "filename": 1,
+        "uploaded_by": 1,
+        "category": 1,
+        "service": 1
+    })
+
     return jsonify(list(docs)), 200
+
+
 
 # ✅ Lister toutes les catégories
 @files_bp.route('/categories', methods=['GET'])
@@ -194,3 +232,28 @@ def delete_category(category_name):
     return jsonify({
         "message": f"✅ {len(deleted_files)} fichier(s) supprimé(s) de la catégorie '{category_name}'"
     }), 200
+# Nouvelle route pour téléchargement par ID MongoDB
+@files_bp.route('/download_by_id/<file_id>', methods=['GET'])
+def download_file_by_id(file_id):
+    try:
+        doc = documents_collection.find_one({"_id": ObjectId(file_id)})
+    except Exception as e:
+        return jsonify({"error": "ID invalide"}), 400
+
+    if not doc:
+        return jsonify({"error": "Fichier non trouvé"}), 404
+
+    zip_data = doc.get("file_data")
+    if not zip_data:
+        return jsonify({"error": "Aucune donnée trouvée"}), 404
+
+    with zipfile.ZipFile(io.BytesIO(zip_data), 'r') as zipf:
+        extracted_names = zipf.namelist()
+        if not extracted_names:
+            return jsonify({"error": "Fichier vide"}), 500
+        extracted_file = zipf.read(extracted_names[0])
+        return send_file(
+            io.BytesIO(extracted_file),
+            as_attachment=True,
+            download_name=extracted_names[0]
+        )
